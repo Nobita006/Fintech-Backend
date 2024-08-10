@@ -4,32 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Fintech Platform</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h2>Welcome, <span id="username"></span></h2>
-        <p>Balance: $<span id="balance"></span></p>
-        <button onclick="showDepositForm()">Deposit</button>
-        <button onclick="showWithdrawForm()">Withdraw</button>
-        <button onclick="showTransferForm()">Transfer</button>
-        <button onclick="fetchTransactions()">View Transactions</button>
+    <div class="container mt-5">
+        <div class="card shadow p-4">
+            <h2 class="text-center">Welcome, <span id="username"></span></h2>
+            <p class="text-center">Balance: $<span id="balance"></span></p>
+            <div class="d-flex flex-column align-items-center">
+                <button onclick="showDepositForm()" class="btn btn-primary btn-block mb-2">Deposit</button>
+                <button onclick="showWithdrawForm()" class="btn btn-primary btn-block mb-2">Withdraw</button>
+                <button onclick="showTransferForm()" class="btn btn-primary btn-block mb-2">Transfer</button>
+                <button onclick="fetchTransactions()" class="btn btn-primary btn-block">View Transactions</button>
+            </div>
 
-        <div id="transactionForm" style="display:none;">
-            <h3 id="transactionType"></h3>
-            <form id="transactionForm">
-                <input type="email" id="recipientEmail" placeholder="Recipient Email" style="display: none;">
-                <input type="number" id="amount" placeholder="Amount" required>
-                <button type="submit">Submit</button>
-            </form>
+            <div id="transactionForm" class="mt-4" style="display:none;">
+                <h3 class="text-center" id="transactionType"></h3>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <input type="email" class="form-control" id="recipientEmail" placeholder="Recipient Email" style="display: none;">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" class="form-control" id="amount" placeholder="Amount" required>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-block">Submit</button>
+                </form>
+            </div>
+
+            <div id="transactionHistory" class="mt-4" style="display:none;">
+                <h3 class="text-center">Transaction History</h3>
+                <ul id="transactionList" class="list-group"></ul>
+            </div>
+
+            <p id="transactionError" class="error mt-3 text-center"></p>
         </div>
-
-        <div id="transactionHistory" style="display:none;">
-            <h3>Transaction History</h3>
-            <ul id="transactionList"></ul>
-        </div>
-
-        <p id="transactionError" class="error"></p>
     </div>
     <script src="scripts.js"></script>
 </body>
