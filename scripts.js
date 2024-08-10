@@ -357,4 +357,14 @@ async function fetchTransactions() {
 
     document.getElementById('transactionForm').style.display = 'none';
     document.getElementById('transactionHistory').style.display = 'block';
+
+    // Update the balance after fetching transactions
+    fetchUserData();
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('token');
+    window.location.href = 'index.html';
 }
