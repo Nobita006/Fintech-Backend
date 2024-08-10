@@ -206,7 +206,7 @@ mutation Transfer($userId: uuid!, $recipientId: uuid!, $amount: numeric!) {
 ## Design Decisions and Assumptions
 
 ### 1. Authentication
-- For simplicity, the project uses a mock JWT token for authentication. In a production environment, a real JWT token should be generated using a library like `jsonwebtoken`.
+- For simplicity, the project uses a mock JWT token for authentication. In a production environment, a real JWT token will be generated using a library like `jsonwebtoken`.
 
 ### 2. Password Handling
 - Passwords are hashed using `bcrypt`.
@@ -220,7 +220,7 @@ mutation Transfer($userId: uuid!, $recipientId: uuid!, $amount: numeric!) {
 - Transfers are treated as a combination of withdrawal and deposit operations to ensure both parties' balances are updated correctly.
 
 ### 5. Error Handling
-- Basic error handling is implemented. Future iterations should include more robust error handling and logging mechanisms.
+- Basic error handling is implemented.
 
 ### 6. UI Design
 - The UI is simple and uses Bootstrap for basic styling. The focus is on functionality rather than aesthetic design.
