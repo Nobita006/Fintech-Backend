@@ -66,8 +66,8 @@ This project is a simple Fintech platform that allows users to deposit, withdraw
 **Request:**
 ```json
 {
-  "email": "user@example.com",
-  "password": "password123"
+  "email": "1@gmail.com",
+  "password": "123"
 }
 ```
 
