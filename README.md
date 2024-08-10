@@ -6,6 +6,11 @@ This project is a simple Fintech platform that allows users to deposit, withdraw
 - email - 1@gmail.com          Password - 123
 - email - 2@gmail.com          Password - 1234
 
+## Screen Recording
+
+https://github.com/user-attachments/assets/db33d312-bb5b-4cd8-a1e5-fc2ad98d5e03
+
+
 ## Table of Contents
 
 1. [Setup Instructions](#setup-instructions)
