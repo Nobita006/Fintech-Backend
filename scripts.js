@@ -16,13 +16,9 @@ const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', async function (e) {
         e.preventDefault();
-        console.log('Login form submitted');
 
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-
-        console.log('Email:', email);
-        console.log('Password:', password);
 
         try {
             const response = await fetch(SERVER_ENDPOINT, {
@@ -34,18 +30,14 @@ if (loginForm) {
             });
 
             const data = await response.json();
-            console.log('Response data:', data);
 
             if (response.ok) {
-                console.log('Login successful');
                 setUser(data.userId, data.token);
                 window.location.href = 'dashboard.html';
             } else {
-                console.error('Login failed:', data.error);
                 document.getElementById('loginError').textContent = data.error;
             }
         } catch (error) {
-            console.error('Error during login:', error);
             document.getElementById('loginError').textContent = 'An error occurred. Please try again.';
         }
     });
@@ -121,53 +113,6 @@ function showTransferForm() {
     document.getElementById('transactionHistory').style.display = 'none';
 }
 
-// FETCH TRANSACTIONS
-async function fetchTransactions() {
-    const token = getToken();
-    const userId = getUserId();
-    if (!token || !userId) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    const response = await fetch(HASURA_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'content-type': 'application/json',
-            'x-hasura-admin-secret': HASURA_ADMIN_SECRET,
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-            query: `
-                query GetTransactions($userId: uuid!) {
-                    transactions(where: { user_id: { _eq: $userId } }) {
-                        id
-                        type
-                        amount
-                        timestamp
-                    }
-                }
-            `,
-            variables: { userId: userId },
-        }),
-    });
-
-    const data = await response.json();
-    const transactions = data.data.transactions;
-
-    const transactionList = document.getElementById('transactionList');
-    transactionList.innerHTML = '';
-
-    transactions.forEach(transaction => {
-        const listItem = document.createElement('li');
-        listItem.textContent = `${transaction.type} of $${transaction.amount.toFixed(2)} on ${new Date(transaction.timestamp).toLocaleString()}`;
-        transactionList.appendChild(listItem);
-    });
-
-    document.getElementById('transactionForm').style.display = 'none';
-    document.getElementById('transactionHistory').style.display = 'block';
-}
-
 // HANDLE TRANSACTION SUBMISSION
 document.querySelector('#transactionForm form').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -175,6 +120,9 @@ document.querySelector('#transactionForm form').addEventListener('submit', async
     const transactionType = document.getElementById('transactionType').textContent.toLowerCase();
     const userId = getUserId(); // Get the logged-in user's ID
     const recipientEmail = document.getElementById('recipientEmail').value;
+
+    // Clear the error message before any new transaction attempt
+    document.getElementById('transactionError').textContent = '';
 
     // Validation: Check for negative or zero amount
     if (amount <= 0) {
@@ -311,8 +259,102 @@ document.querySelector('#transactionForm form').addEventListener('submit', async
             document.getElementById('transactionForm').style.display = 'none';
             fetchTransactions(); // Show updated transactions
         } catch (error) {
-            console.error('Error during transaction:', error);
             document.getElementById('transactionError').textContent = 'An error occurred. Please try again.';
         }
+    } else {
+        // Hide the error message after a successful transaction
+        document.getElementById('transactionError').textContent = '';
+    }
+
+    try {
+        // Execute the mutation for deposit or withdraw
+        if (transactionType === 'deposit' || transactionType === 'withdraw') {
+            const response = await fetch(HASURA_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'x-hasura-admin-secret': HASURA_ADMIN_SECRET,
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify({
+                    query: mutation,
+                    variables: variables,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.errors) {
+                document.getElementById('transactionError').textContent = result.errors[0].message;
+            } else {
+                // Update the UI after a successful transaction
+                fetchUserData(); // Update balance
+                document.querySelector('#transactionForm form').reset(); // Reset form input
+                document.getElementById('transactionForm').style.display = 'none';
+                fetchTransactions(); // Show updated transactions
+            }
+        }
+    } catch (error) {
+        document.getElementById('transactionError').textContent = 'An error occurred. Please try again.';
     }
 });
+
+// Fetch transactions and update labels for transfers
+async function fetchTransactions() {
+    const token = getToken();
+    const userId = getUserId();
+    if (!token || !userId) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    const response = await fetch(HASURA_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            'x-hasura-admin-secret': HASURA_ADMIN_SECRET,
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+            query: `
+                query GetTransactions($userId: uuid!) {
+                    transactions(where: { user_id: { _eq: $userId } }) {
+                        id
+                        type
+                        amount
+                        timestamp
+                    }
+                    transactions_as_recipient: transactions(where: { recipient_id: { _eq: $userId } }) {
+                        id
+                        type
+                        amount
+                        timestamp
+                    }
+                }
+            `,
+            variables: { userId: userId },
+        }),
+    });
+
+    const data = await response.json();
+    const transactions = data.data.transactions;
+    const receivedTransactions = data.data.transactions_as_recipient;
+
+    const transactionList = document.getElementById('transactionList');
+    transactionList.innerHTML = '';
+
+    transactions.forEach(transaction => {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${transaction.type === 'withdrawal' ? 'Withdraw' : 'Deposit'} of $${Math.abs(transaction.amount).toFixed(2)} on ${new Date(transaction.timestamp).toLocaleString()}`;
+        transactionList.appendChild(listItem);
+    });
+
+    receivedTransactions.forEach(transaction => {
+        const listItem = document.createElement('li');
+        listItem.textContent = `Received $${Math.abs(transaction.amount).toFixed(2)} on ${new Date(transaction.timestamp).toLocaleString()}`;
+        transactionList.appendChild(listItem);
+    });
+
+    document.getElementById('transactionForm').style.display = 'none';
+    document.getElementById('transactionHistory').style.display = 'block';
+}
