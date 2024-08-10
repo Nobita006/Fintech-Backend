@@ -12,11 +12,13 @@
         <p>Balance: $<span id="balance"></span></p>
         <button onclick="showDepositForm()">Deposit</button>
         <button onclick="showWithdrawForm()">Withdraw</button>
+        <button onclick="showTransferForm()">Transfer</button>
         <button onclick="fetchTransactions()">View Transactions</button>
 
         <div id="transactionForm" style="display:none;">
             <h3 id="transactionType"></h3>
             <form id="transactionForm">
+                <input type="email" id="recipientEmail" placeholder="Recipient Email" style="display: none;">
                 <input type="number" id="amount" placeholder="Amount" required>
                 <button type="submit">Submit</button>
             </form>
