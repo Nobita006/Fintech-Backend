@@ -3,8 +3,8 @@
 This project is a simple Fintech platform that allows users to deposit, withdraw, transfer funds, and view transaction history. The application is built using HTML, CSS, Bootstrap, JavaScript for the frontend, and Node.js with Express for the backend. The backend communicates with a Hasura GraphQL API for managing users and transactions.
 
 ## Login Credentials
-- email - 1@gmail.com    Password - 123
-- email - 2@gmail.com    Password - 1234
+- email - 1@gmail.com          Password - 123
+- email - 2@gmail.com          Password - 1234
 
 ## Table of Contents
 
