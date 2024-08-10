@@ -345,13 +345,13 @@ async function fetchTransactions() {
 
     transactions.forEach(transaction => {
         const listItem = document.createElement('li');
-        listItem.textContent = `${transaction.type === 'withdrawal' ? 'Withdraw' : 'Deposit'} of $${Math.abs(transaction.amount).toFixed(2)} on ${new Date(transaction.timestamp).toLocaleString()}`;
+        listItem.textContent = `${transaction.type === 'withdrawal' ? 'Withdraw' : 'Deposit'} of ₹${Math.abs(transaction.amount).toFixed(2)} on ${new Date(transaction.timestamp).toLocaleString()}`;
         transactionList.appendChild(listItem);
     });
 
     receivedTransactions.forEach(transaction => {
         const listItem = document.createElement('li');
-        listItem.textContent = `Received $${Math.abs(transaction.amount).toFixed(2)} on ${new Date(transaction.timestamp).toLocaleString()}`;
+        listItem.textContent = `Received ₹${Math.abs(transaction.amount).toFixed(2)} on ${new Date(transaction.timestamp).toLocaleString()}`;
         transactionList.appendChild(listItem);
     });
 

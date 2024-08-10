@@ -49,7 +49,7 @@ app.post('/login', async (req, res) => {
         const isPasswordCorrect = await bcrypt.compare(password, user.password_hash);
 
         if (isPasswordCorrect) {
-            // Generate a token (mocked here, implement a real JWT in production)
+            // Generate a token (mocked here)
             const token = 'mock-jwt-token';
 
             // Send back user ID and token
