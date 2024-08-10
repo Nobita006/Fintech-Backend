@@ -176,13 +176,20 @@ document.querySelector('#transactionForm form').addEventListener('submit', async
     const userId = getUserId(); // Get the logged-in user's ID
     const recipientEmail = document.getElementById('recipientEmail').value;
 
+    // Validation: Check for negative or zero amount
+    if (amount <= 0) {
+        document.getElementById('transactionError').textContent = 'Amount must be a positive number.';
+        return;
+    }
+
     let mutation;
     let variables = { userId, amount };
 
-    if (transactionType === 'deposit') {
+    if (transactionType === 'withdraw') {
+        const negativeAmount = -amount; // Calculate the negative amount
         mutation = `
-            mutation Deposit($userId: uuid!, $amount: numeric!) {
-                insert_transactions_one(object: { user_id: $userId, type: "deposit", amount: $amount }) {
+            mutation Withdraw($userId: uuid!, $amount: numeric!) {
+                insert_transactions_one(object: { user_id: $userId, type: "withdrawal", amount: $amount }) {
                     id
                 }
                 update_users_by_pk(pk_columns: { id: $userId }, _inc: { balance: $amount }) {
@@ -191,13 +198,14 @@ document.querySelector('#transactionForm form').addEventListener('submit', async
                 }
             }
         `;
-    } else if (transactionType === 'withdraw') {
+        variables = { userId, amount: negativeAmount }; // Pass the negative amount
+    } else if (transactionType === 'deposit') {
         mutation = `
-            mutation Withdraw($userId: uuid!, $amount: numeric!) {
-                insert_transactions_one(object: { user_id: $userId, type: "withdrawal", amount: $amount }) {
+            mutation Deposit($userId: uuid!, $amount: numeric!) {
+                insert_transactions_one(object: { user_id: $userId, type: "deposit", amount: $amount }) {
                     id
                 }
-                update_users_by_pk(pk_columns: { id: $userId }, _inc: { balance: -$amount }) {
+                update_users_by_pk(pk_columns: { id: $userId }, _inc: { balance: $amount }) {
                     id
                     balance
                 }
@@ -232,54 +240,79 @@ document.querySelector('#transactionForm form').addEventListener('submit', async
         }
 
         const recipientId = recipient.id;
+        const negativeAmount = -amount;
 
-        mutation = `
-            mutation Transfer($userId: uuid!, $recipientId: uuid!, $amount: numeric!) {
-                insert_transactions_one(object: { user_id: $userId, type: "withdrawal", amount: $amount }) {
-                    id
-                }
-                update_users_by_pk(pk_columns: { id: $userId }, _inc: { balance: -$amount }) {
-                    id
-                    balance
-                }
-                insert_transactions_one(object: { user_id: $recipientId, type: "deposit", amount: $amount }) {
-                    id
-                }
-                update_users_by_pk(pk_columns: { id: $recipientId }, _inc: { balance: $amount }) {
-                    id
-                    balance
-                }
+        try {
+            // Perform the withdrawal first
+            const withdrawResponse = await fetch(HASURA_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'x-hasura-admin-secret': HASURA_ADMIN_SECRET,
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify({
+                    query: `
+                        mutation Withdraw($userId: uuid!, $amount: numeric!) {
+                            insert_transactions_one(object: { user_id: $userId, type: "withdrawal", amount: $amount }) {
+                                id
+                            }
+                            update_users_by_pk(pk_columns: { id: $userId }, _inc: { balance: $amount }) {
+                                id
+                                balance
+                            }
+                        }
+                    `,
+                    variables: { userId, amount: negativeAmount },
+                }),
+            });
+
+            const withdrawResult = await withdrawResponse.json();
+
+            if (withdrawResult.errors) {
+                document.getElementById('transactionError').textContent = withdrawResult.errors[0].message;
+                return;
             }
-        `;
-        variables.recipientId = recipientId;
-    }
 
-    try {
-        const response = await fetch(HASURA_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'x-hasura-admin-secret': HASURA_ADMIN_SECRET,
-                'Authorization': `Bearer ${getToken()}`,
-            },
-            body: JSON.stringify({
-                query: mutation,
-                variables: variables,
-            }),
-        });
+            // If withdrawal is successful, perform the deposit
+            const depositResponse = await fetch(HASURA_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'x-hasura-admin-secret': HASURA_ADMIN_SECRET,
+                    'Authorization': `Bearer ${getToken()}`,
+                },
+                body: JSON.stringify({
+                    query: `
+                        mutation Deposit($recipientId: uuid!, $amount: numeric!) {
+                            insert_transactions_one(object: { user_id: $recipientId, type: "deposit", amount: $amount }) {
+                                id
+                            }
+                            update_users_by_pk(pk_columns: { id: $recipientId }, _inc: { balance: $amount }) {
+                                id
+                                balance
+                            }
+                        }
+                    `,
+                    variables: { recipientId, amount },
+                }),
+            });
 
-        const result = await response.json();
+            const depositResult = await depositResponse.json();
 
-        if (result.errors) {
-            document.getElementById('transactionError').textContent = result.errors[0].message;
-        } else {
+            if (depositResult.errors) {
+                document.getElementById('transactionError').textContent = depositResult.errors[0].message;
+                return;
+            }
+
+            // Update the UI after both operations are successful
             fetchUserData(); // Update balance
             document.querySelector('#transactionForm form').reset(); // Reset form input
             document.getElementById('transactionForm').style.display = 'none';
             fetchTransactions(); // Show updated transactions
+        } catch (error) {
+            console.error('Error during transaction:', error);
+            document.getElementById('transactionError').textContent = 'An error occurred. Please try again.';
         }
-    } catch (error) {
-        console.error('Error during transaction:', error);
-        document.getElementById('transactionError').textContent = 'An error occurred. Please try again.';
     }
 });

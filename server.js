@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fetch = require('node-fetch'); // If using Node.js version <18
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = 5000;
